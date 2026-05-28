@@ -110,7 +110,7 @@ ssh admin@192.168.50.1 "mount | grep jffs"
 
 ## Sección 5 — Instalar los scripts de routing
 
-Los scripts están en `network-config/jffs/` en este repositorio.
+Los scripts están en `jffs/` en este repositorio.
 Ejecútalos desde un equipo en la LAN (Linux, macOS o WSL en Windows).
 
 ```sh
@@ -118,8 +118,8 @@ Ejecútalos desde un equipo en la LAN (Linux, macOS o WSL en Windows).
 ssh admin@192.168.50.1 "mkdir -p /jffs/scripts"
 
 # 2. Copia los scripts
-scp network-config/jffs/nat-start  admin@192.168.50.1:/jffs/scripts/nat-start
-scp network-config/jffs/wan-event  admin@192.168.50.1:/jffs/scripts/wan-event
+scp jffs/nat-start  admin@192.168.50.1:/jffs/scripts/nat-start
+scp jffs/wan-event  admin@192.168.50.1:/jffs/scripts/wan-event
 
 # 3. Hazlos ejecutables
 ssh admin@192.168.50.1 "chmod +x /jffs/scripts/nat-start /jffs/scripts/wan-event"
@@ -134,7 +134,7 @@ ssh admin@192.168.50.1 "iptables -t mangle -L PREROUTING -n -v --line-numbers"
 ```
 Debes ver líneas con `MARK set 0x1` (WAN1) asociadas a:
 - La IP `192.168.50.10` (ThinkPad HA, tanto como origen como destino)
-- Puertos 21, 22, 443, 990, 2283, 8123 (TCP y UDP)
+- Puertos 21, 22, 990, 2283, 8123 (TCP y UDP) — el 443 queda en round-robin intencionalmente
 - Una regla `CONNMARK restore` en la posición 1 (primera de la cadena)
 - Una regla `CONNMARK save` en POSTROUTING
 
@@ -232,7 +232,7 @@ cru a duckdns "*/5 * * * * /jffs/scripts/duckdns.sh"
 
 1. Abre Home Assistant → **Settings → Add-ons → File Editor → Open Web UI**.
 2. Navega a `/config/configuration.yaml`.
-3. Añade el contenido del archivo `network-config/homeassistant/configuration_additions.yaml`.
+3. Añade el contenido del archivo `homeassistant/configuration_additions.yaml`.
 
    **Si ya tienes un bloque `homeassistant:`**, fusiona las claves dentro del
    bloque existente. No dupliques el bloque: YAML no admite claves raíz repetidas.

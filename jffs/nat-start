@@ -26,7 +26,10 @@ WAN1_MARK="0x01/0x0f"
 
 # Puertos de salida que se consideran "de subida": SSH, FTP activo, FTPS,
 # Immich sync, y el propio puerto de HA (por si otro cliente sube datos a HA).
-UPLOAD_PORTS="21,22,443,990,2283,8123"
+# El puerto 443 (HTTPS) se excluye intencionalmente para que las descargas HTTPS
+# del resto de la LAN sigan beneficiándose del balanceo round-robin entre WANs.
+# El tráfico 443 del ThinkPad (HA server) ya va siempre por WAN1 por la regla HAOS_IP.
+UPLOAD_PORTS="21,22,990,2283,8123"
 
 logger -t nat-start "Iniciando aplicación de reglas dual-WAN..."
 
@@ -96,4 +99,4 @@ ipt_insert_if_missing mangle PREROUTING \
 ipt_insert_if_missing mangle POSTROUTING \
     -j CONNMARK --save-mark --nfmask 0x0f --ctmask 0x0f
 
-logger -t nat-start "Reglas aplicadas: HAOS ($HAOS_IP) → WAN1 siempre; puertos subida ($UPLOAD_PORTS) → WAN1."
+logger -t nat-start "Reglas aplicadas: HAOS ($HAOS_IP) → WAN1 siempre; puertos subida ($UPLOAD_PORTS) → WAN1; 443 en round-robin."
