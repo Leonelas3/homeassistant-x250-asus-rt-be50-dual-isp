@@ -1,0 +1,34 @@
+#!/bin/sh
+# =============================================================================
+# /jffs/scripts/wan-event
+#
+# AsusWRT llama a este script cada vez que cambia el estado de un WAN:
+# arranque inicial, desconexión, reconexión, failover, failback.
+#
+# Argumentos que pasa AsusWRT:
+#   $1 — interfaz: "wan0" (WAN1/O2) o "wan1" (WAN2/Vodafone)
+#   $2 — evento:   "connected", "disconnected", "stopped", etc.
+#
+# Cuando ocurre un evento WAN, AsusWRT reconstruye sus propias reglas de
+# iptables. Por eso re-aplicamos nat-start después de cada evento para
+# asegurarnos de que nuestras reglas de política de routing vuelven a estar
+# activas y en la posición correcta (por delante de las reglas de ASUS).
+# =============================================================================
+
+WAN_IF="${1:-desconocido}"
+WAN_EVENT="${2:-desconocido}"
+
+logger -t wan-event "Evento WAN: interfaz=$WAN_IF estado=$WAN_EVENT"
+
+NAT_START="/jffs/scripts/nat-start"
+
+if [ -x "$NAT_START" ]; then
+    # Esperamos a que AsusWRT termine de escribir sus reglas antes de insertar
+    # las nuestras encima. El valor de 3 s es conservador; en hardware rápido
+    # bastará con 1 s, pero preferimos ser seguros.
+    sleep 3
+    "$NAT_START"
+    logger -t wan-event "nat-start re-aplicado tras evento '$WAN_EVENT' en $WAN_IF."
+else
+    logger -t wan-event "ERROR: $NAT_START no existe o no tiene permisos de ejecución. Ejecuta: chmod +x $NAT_START"
+fi

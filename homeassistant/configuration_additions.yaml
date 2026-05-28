@@ -1,0 +1,30 @@
+# Fragmento para añadir a /config/configuration.yaml en Home Assistant OS.
+#
+# Cómo editar: Settings → Add-ons → File Editor → Open Web UI → /config/configuration.yaml
+# Si ya tienes bloques "homeassistant:" o "http:" existentes, fusiona las claves
+# dentro de esos bloques en lugar de duplicarlos — YAML no admite claves repetidas.
+#
+# Tras guardar: Developer Tools → YAML → Check Configuration → Restart HA.
+
+homeassistant:
+  # external_url sin puerto (:443 omitido) funciona porque el router hace
+  # port forward 443 → 192.168.50.10:8123. Google Home y otras integraciones
+  # que construyen la URL de webhook sobre esta base la usarán correctamente.
+  external_url: "https://leonelastres.duckdns.org"
+
+  # internal_url es la URL que HA usa cuando el cliente está en la red local.
+  # Puerto 8123 explícito porque no hay ningún proxy interno que escuche en 80/443.
+  internal_url: "http://192.168.50.10:8123"
+
+http:
+  # Las dos opciones siguientes son necesarias SOLO si hay un reverse proxy
+  # (nginx, Traefik, Cloudflare Tunnel, etc.) delante de Home Assistant.
+  # Con acceso directo por port forwarding del router, son opcionales.
+  # Se incluyen aquí por si en el futuro se añade un proxy, para no olvidarlas.
+  use_x_forwarded_for: true
+  trusted_proxies:
+    - 127.0.0.1   # localhost (proxy en la misma máquina)
+    - ::1          # localhost IPv6
+    # Descomenta y ajusta si añades un proxy inverso en la red:
+    # - 192.168.50.1   # IP del router (si el router actúa como proxy/NAT hairpin)
+    # - 192.168.50.xxx # IP del servidor proxy dedicado
