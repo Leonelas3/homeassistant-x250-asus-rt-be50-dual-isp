@@ -4,7 +4,9 @@
 **Router (admin):** http://192.168.50.1  
 **WAN1:** DiGi fibra simétrica 1 Gbps — puerto WAN 2.5G (Cat 8.1 SFTP)  
 **WAN2:** Vodafone cable 600 Mbps — puerto LAN3 reconfigurado como WAN2 (Cat 8.1 SFTP)  
-**HA Server:** HP Pro Mini 400 G9 — Hyper-V → VM: 192.168.50.10 / Host: 192.168.50.20  
+**HP Pro Mini 400 G9:** Windows 11 (host Hyper-V) → 192.168.50.10  
+**HA Server (VM Hyper-V):** Home Assistant OS → 192.168.50.11 (reservar en DHCP)  
+**Coordinador Zigbee:** Sonoff (RJ45) → 192.168.50.40 (verificar IP actual en lista DHCP)  
 **Google TV Streamer:** Philips dormitorio → 192.168.50.30  
 
 ---
@@ -101,14 +103,16 @@ the DHCP list" (o "Static IP list" según versión de firmware).
 
 | Nombre de host      | IP a asignar   | Cómo obtener la MAC                                                                         |
 |---------------------|----------------|---------------------------------------------------------------------------------------------|
-| HA-HyperV-VM        | 192.168.50.10  | Consola HA: Settings → System → Network → adaptador de red → MAC                           |
-| HP-Mini-400G9       | 192.168.50.20  | Windows cmd: `ipconfig /all` → Physical Address de la NIC activa                           |
+| HP-Mini-400G9       | 192.168.50.10  | Windows cmd: `ipconfig /all` → Physical Address de la NIC activa                           |
+| HA-HyperV-VM        | 192.168.50.11  | Consola HA: Settings → System → Network → adaptador de red → MAC                           |
 | Google-TV-Streamer  | 192.168.50.30  | Google TV: Settings → Network & internet → Wi-Fi → tu red → ⓘ → MAC address               |
+| Zigbee-Sonoff       | 192.168.50.40  | Interfaz web del coordinador Zigbee o lista DHCP del Asus (LAN → DHCP Clients)             |
 
 > **Importante — Hyper-V:** La VM de HA debe estar conectada a un **External Virtual Switch**
 > (no al Default Switch) para que sea accesible desde la red 192.168.50.x.
-> Compruébalo en Hyper-V Manager → Virtual Switch Manager. Si está en el Default Switch
-> (172.x.x.x) crea uno nuevo tipo External vinculado a la NIC física del HP Mini.
+> Si está en el Default Switch obtendrá una IP tipo 172.x.x.x y NO será accesible
+> desde la LAN ni desde el router. Crea uno nuevo en Hyper-V Manager → Virtual Switch
+> Manager → External, vinculado a la NIC física del HP Mini.
 
 ---
 
@@ -118,9 +122,9 @@ the DHCP list" (o "Static IP list" según versión de firmware).
 
 | Service Name | Protocol | External Port | Internal IP   | Internal Port |
 |--------------|----------|---------------|---------------|---------------|
-| HA_HTTPS     | TCP      | 443           | 192.168.50.10 | 8123          |
-| HA_Immich    | TCP      | 2283          | 192.168.50.10 | 2283          |
-| HA_8123      | TCP      | 8123          | 192.168.50.10 | 8123          |
+| HA_HTTPS     | TCP      | 443           | 192.168.50.11 | 8123          |
+| HA_Immich    | TCP      | 2283          | 192.168.50.11 | 2283          |
+| HA_8123      | TCP      | 8123          | 192.168.50.11 | 8123          |
 
 - **HA_HTTPS:** captura el tráfico HTTPS estándar (puerto 443) y lo redirige al
   puerto 8123 de HA. La URL `https://leonelastres.duckdns.org` (sin puerto) funciona así.
@@ -157,7 +161,7 @@ ssh admin@192.168.50.1 "mount | grep jffs"
 ## Sección 6 — Instalar los scripts de routing
 
 Los scripts en `jffs/` implementan la política dual-WAN:
-- El servidor HA (192.168.50.10) siempre usa WAN1 (DiGi)
+- El servidor HA (VM Hyper-V, 192.168.50.11) siempre usa WAN1 (DiGi)
 - Los uploads (puertos 21, 22, 990, 2283, 8123) van por WAN1
 - El resto del tráfico se balancea en round-robin entre WAN1 y WAN2
 
@@ -181,7 +185,7 @@ ssh admin@192.168.50.1 "/jffs/scripts/nat-start"
 ssh admin@192.168.50.1 "iptables -t mangle -L PREROUTING -n -v --line-numbers"
 ```
 Debes ver líneas con `MARK set 0x1` (WAN1) asociadas a:
-- La IP `192.168.50.10` (HA Hyper-V, tanto como origen como destino)
+- La IP `192.168.50.11` (VM HA Hyper-V, tanto como origen como destino)
 - Puertos 21, 22, 990, 2283, 8123 (TCP y UDP) — el 443 queda en round-robin intencionalmente
 - Una regla `CONNMARK restore` en la posición 1 (primera de la cadena)
 - Una regla `CONNMARK save` en POSTROUTING
@@ -263,7 +267,7 @@ Si está en el Default Switch de Hyper-V (172.x.x.x), **no será accesible desde
 ### Asignar IP fija a la VM
 
 1. Arranca la VM y obtén la MAC: Hyper-V Manager → VM → Settings → Network Adapter → MAC Address
-2. En el Asus: LAN → DHCP Server → reserva `192.168.50.10` para esa MAC (Sección 3)
+2. En el Asus: LAN → DHCP Server → reserva `192.168.50.11` para esa MAC (Sección 3)
 3. Reinicia la VM para que tome la IP reservada
 
 ### Configurar configuration.yaml
@@ -275,7 +279,7 @@ Si está en el Default Switch de Hyper-V (172.x.x.x), **no será accesible desde
    ```yaml
    homeassistant:
      external_url: "https://leonelastres.duckdns.org"
-     internal_url: "http://192.168.50.10:8123"
+     internal_url: "http://192.168.50.11:8123"
 
    http:
      use_x_forwarded_for: true
@@ -315,74 +319,60 @@ Al cambiar de IP o de máquina, las integraciones cloud deben revincularse:
 
 ---
 
-## Sección 9 — Coordinador Zigbee: Sonoff Dongle Max vía red
+## Sección 9 — Coordinador Zigbee: Sonoff (conexión RJ45)
 
-La VM de Hyper-V no tiene acceso USB directo. El Sonoff Dongle Max, conectado
-al puerto USB del Asus RT-BE50, se expone como dispositivo de red usando **ser2net**.
-HA se conecta a él vía TCP (`socket://192.168.50.1:6638`).
+El coordinador Zigbee está conectado mediante **cable RJ45 al Asus RT-BE50** y alimentado
+por su propio cargador de pared. Es un dispositivo de red independiente con su propia IP
+en la LAN 192.168.50.x — no requiere ningún USB ni software adicional en el router.
 
-### Paso 1 — Instalar Entware en el Asus RT-BE50
+### Paso 1 — Encontrar la IP actual del coordinador
 
-Entware es el gestor de paquetes para firmware Merlin/AsusWRT. Requiere JFFS activo (Sección 5).
+El coordinador obtuvo una IP por DHCP al conectarse. Búscala en:
 
+- **Asus web admin:** LAN → DHCP Clients List — busca un dispositivo con nombre tipo "sonoff", "zigbee" o similar
+- O desde la consola SSH del router:
+  ```sh
+  ssh admin@192.168.50.1
+  cat /var/lib/misc/dnsmasq.leases   # lista de concesiones DHCP activas
+  ```
+
+### Paso 2 — Asignar IP estática
+
+Una vez identificada la IP actual, asígnale la `192.168.50.40` por DHCP reservation
+usando su MAC address (Sección 3). Reinicia el coordinador para que tome la IP reservada.
+
+Verifica que responde:
 ```sh
-ssh admin@192.168.50.1
-
-# Instala Entware (una sola vez)
-entware-setup.sh
-# Si el script no existe, primero inicia sesión y busca la versión de tu router:
-# uname -m   → armv7l (RT-BE50)
-# wget -O - https://bin.entware.net/armv7sf-k3.10/installer/generic.sh | sh
-
-# Actualiza repositorios e instala ser2net
-opkg update
-opkg install ser2net
+ping 192.168.50.40
 ```
 
-### Paso 2 — Verificar dispositivo USB
+### Paso 3 — Acceder a la interfaz web del coordinador (si la tiene)
 
-```sh
-# Verifica que el dongle aparece como dispositivo serial
-ls -la /dev/ttyUSB*
-dmesg | grep -E 'tty|USB' | tail -20
+Muchos coordinadores Zigbee de red tienen una interfaz web de administración:
+
+```
+http://192.168.50.40
 ```
 
-El Sonoff Dongle Max aparece habitualmente como `/dev/ttyUSB0`. Si hay otros dispositivos USB
-podría ser `/dev/ttyUSB1`.
-
-### Paso 3 — Configurar ser2net
-
-```sh
-cat > /opt/etc/ser2net.conf << 'EOF'
-# Puerto TCP 6638 → Sonoff Zigbee Dongle Max (coordinador ZHA)
-6638:raw:0:/dev/ttyUSB0:115200 8DATABITS NONE 1STOPBIT
-EOF
-```
-
-Inicia y verifica:
-```sh
-/opt/etc/init.d/S50ser2net start
-
-# Confirma que está escuchando
-netstat -ln | grep 6638
-# Debe aparecer: tcp  0  0 0.0.0.0:6638  0.0.0.0:*  LISTEN
-```
-
-El script `S50ser2net` arranca automáticamente con el router gracias al sistema init de Entware.
+Desde ahí puedes verificar el firmware, el puerto TCP que expone para ZHA,
+y cualquier ajuste de red.
 
 ### Paso 4 — Configurar ZHA en Home Assistant
 
+El puerto TCP habitual para coordinadores Zigbee de red es **6638**
+(confirma en la interfaz web del dispositivo si usa otro).
+
 1. Settings → Integrations → Add Integration → **Zigbee Home Automation (ZHA)**
-2. **Serial device path:** `socket://192.168.50.1:6638`
-3. **Radio type:** EZSP (para Sonoff Dongle Max con firmware EFR32)
+2. **Serial device path:** `socket://192.168.50.40:6638`
+3. **Radio type:** EZSP (si usa chip EFR32) o selecciona el tipo que corresponda a tu dispositivo
 4. Completa el asistente
 
-> **Si ZHA ya estaba configurado** con un path USB local: Settings → Integrations → ZHA → Configure
-> → cambia el path a `socket://192.168.50.1:6638`.
+> **Si ZHA ya estaba configurado** con una IP o path anterior: Settings → Integrations → ZHA
+> → Configure → cambia el path a `socket://192.168.50.40:6638`.
 
 ### Paso 5 — Re-emparejar bombillas Zigbee (si es necesario)
 
-Si el coordinador fue reiniciado o reconfigurado, puede ser necesario re-emparejar:
+Si el coordinador fue reconfigurado, puede ser necesario re-emparejar los dispositivos:
 
 1. ZHA → **Add Device** (HA entra en modo pairing durante 60 s)
 2. En cada bombilla: ciclo rápido de encendido/apagado ×5 o ×6 hasta que parpadee (modo pairing)
@@ -445,7 +435,7 @@ de esa sesión por Vodafone.
 
 | Dispositivo / Tráfico | Comportamiento |
 |---|---|
-| Servidor HA (192.168.50.10 — Hyper-V) | **Todo su tráfico siempre por WAN1 (DiGi).** Sin excepción. |
+| VM HA Hyper-V (192.168.50.11) | **Todo su tráfico siempre por WAN1 (DiGi).** Sin excepción. |
 | HP Mini y resto de LAN — puertos 21, 22, 990, 2283, 8123 | → WAN1 (DiGi) |
 | HP Mini y resto de LAN — puerto 443 (HTTPS) | → Round robin (para preservar velocidad de descarga HTTPS) |
 | HP Mini y resto de LAN — resto del tráfico | → Round robin entre WAN1 y WAN2 |
@@ -478,12 +468,15 @@ El HP Mini tendría así una NIC para descargas (round-robin) y otra para subida
 | Recurso | Valor |
 |---|---|
 | Router web admin | http://192.168.50.1 |
-| HA — acceso local | http://192.168.50.10:8123 |
-| Immich — acceso local | http://192.168.50.10:2283 |
+| HA — acceso local | http://192.168.50.11:8123 |
+| Immich — acceso local | http://192.168.50.11:2283 |
 | HA — acceso externo | https://leonelastres.duckdns.org |
 | Immich — acceso externo | https://leonelastres.duckdns.org:2283 |
+| HP Pro Mini (Windows 11) | 192.168.50.10 |
+| HA VM (Hyper-V) | 192.168.50.11 |
+| Coordinador Zigbee (RJ45) | 192.168.50.40 |
 | Google TV Streamer | 192.168.50.30 |
-| Sonoff Dongle Max (Zigbee) | socket://192.168.50.1:6638 |
+| ZHA path coordinador | socket://192.168.50.40:6638 |
 | nvram WAN1 IP (DiGi) | `nvram get wan0_ipaddr` |
 | nvram WAN2 IP (Vodafone) | `nvram get wan1_ipaddr` |
 | Marca iptables WAN1 | `0x01/0x0f` |

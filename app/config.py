@@ -1,8 +1,9 @@
 ROUTER_IP    = "192.168.50.1"
 ROUTER_USER  = "admin"
-HAOS_IP      = "192.168.50.10"   # HA OS en Hyper-V (HP Pro Mini) — reservar en DHCP
-HP_MINI_IP   = "192.168.50.20"   # HP Pro Mini 400 G9 — Windows 11, host Hyper-V
-GOOGLE_TV_IP = "192.168.50.30"   # Google TV Streamer (Philips dormitorio) — reservar en DHCP
+HAOS_IP      = "192.168.50.11"  # HA OS VM en Hyper-V — reservar en DHCP (External vSwitch)
+HP_MINI_IP   = "192.168.50.10"  # HP Pro Mini 400 G9 — Windows 11, host Hyper-V
+SONOFF_IP    = "192.168.50.40"  # Coordinador Zigbee (RJ45) — verificar IP en lista DHCP del Asus
+GOOGLE_TV_IP = "192.168.50.30"  # Google TV Streamer (Philips dormitorio) — reservar en DHCP
 LAN_SUBNET   = "192.168.50"
 DUCKDNS_DOMAIN = "leonelastres"
 HA_LOCAL_URL    = f"http://{HAOS_IP}:8123"
@@ -11,10 +12,11 @@ ROUTER_URL      = f"http://{ROUTER_IP}"
 UPLOAD_PORTS    = "21,22,990,2283,8123"
 
 KNOWN_DEVICES = {
-    ROUTER_IP:    ("Router Asus RT-BE50",                   "Router"),
-    HAOS_IP:      ("Home Assistant OS — Hyper-V (HP Mini)", "Servidor HA"),
-    HP_MINI_IP:   ("HP Pro Mini 400 G9 — Windows 11",       "PC Windows"),
-    GOOGLE_TV_IP: ("Google TV Streamer — Philips dormit.",   "Smart TV"),
+    ROUTER_IP:    ("Router Asus RT-BE50",                    "Router"),
+    HAOS_IP:      ("Home Assistant OS — Hyper-V (HP Mini)",  "Servidor HA"),
+    HP_MINI_IP:   ("HP Pro Mini 400 G9 — Windows 11",        "PC Windows"),
+    SONOFF_IP:    ("Coordinador Zigbee (Sonoff RJ45)",        "Zigbee"),
+    GOOGLE_TV_IP: ("Google TV Streamer — Philips dormit.",    "Smart TV"),
 }
 
 REPO_ROOT   = __import__("pathlib").Path(__file__).parent.parent

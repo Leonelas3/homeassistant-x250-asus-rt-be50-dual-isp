@@ -9,8 +9,8 @@
 # │  IPs A PERSONALIZAR                                                     │
 # │  Ajusta estas variables antes de copiar el script al router.            │
 # └─────────────────────────────────────────────────────────────────────────┘
-HAOS_IP="192.168.50.10"        # Home Assistant OS en Hyper-V (HP Pro Mini 400 G9)
-HP_MINI_IP="192.168.50.20"     # HP Pro Mini 400 G9 — Windows 11 (host Hyper-V)
+HAOS_IP="192.168.50.11"        # Home Assistant OS VM en Hyper-V (reservar IP en DHCP del Asus)
+HP_MINI_IP="192.168.50.10"     # HP Pro Mini 400 G9 — Windows 11 (host Hyper-V)
 LAN_SUBNET="192.168.50.0/24"   # Subred completa (para reglas de puertos de subida)
 # =============================================================================
 #

@@ -107,13 +107,14 @@ class NetworkMap(QGraphicsView):
         n_voda_isp   = NetworkNode("Vodafone","Cable 600 Mbps",       kind="isp",    x=390, y=110)
         n_digi_rtr   = NetworkNode("Router DiGi", "192.168.1.1",      kind="router", x=20,  y=210, section=1)
         n_voda_rtr   = NetworkNode("Router Vodafone","192.168.1.1",   kind="router", x=390, y=210, section=1)
-        n_router     = NetworkNode("RT-BE50", "192.168.50.1",         kind="router", x=205, y=320, section=2)
-        n_haos       = NetworkNode("HA (Hyper-V)", "192.168.50.10",   kind="server", x=20,  y=440, section=8)
-        n_hp         = NetworkNode("HP Mini 400 G9","Win11 · 192.168.50.20", kind="pc", x=205, y=440, section=3)
+        n_router     = NetworkNode("RT-BE50", "192.168.50.1",           kind="router", x=205, y=320, section=2)
+        n_haos       = NetworkNode("HA (Hyper-V)", "192.168.50.11",   kind="server", x=20,  y=440, section=8)
+        n_hp         = NetworkNode("HP Mini 400 G9","Win11 · .10",    kind="pc",     x=205, y=440, section=3)
+        n_sonoff     = NetworkNode("Zigbee (RJ45)", "192.168.50.40",  kind="server", x=390, y=320, section=9)
         n_google_tv  = NetworkNode("Google TV", "192.168.50.30",      kind="tv",     x=390, y=440, section=10)
 
         self._nodes = [n_internet, n_digi_isp, n_voda_isp, n_digi_rtr, n_voda_rtr,
-                       n_router, n_haos, n_hp, n_google_tv]
+                       n_router, n_haos, n_hp, n_sonoff, n_google_tv]
         for n in self._nodes:
             scene.addItem(n)
 
@@ -127,6 +128,7 @@ class NetworkMap(QGraphicsView):
             Edge(n_voda_rtr, n_router,    "WAN2"),
             Edge(n_router,   n_haos,      "siempre WAN1"),
             Edge(n_router,   n_hp,        "round-robin"),
+            Edge(n_router,   n_sonoff,    "RJ45"),
             Edge(n_router,   n_google_tv, "WiFi", wired=False),
         ]
         for e in edges:

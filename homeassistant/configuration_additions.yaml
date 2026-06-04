@@ -15,7 +15,7 @@ homeassistant:
   # internal_url es la URL que HA usa cuando el cliente está en la red local.
   # 192.168.50.10 es la IP de la VM de HA en Hyper-V (HP Pro Mini 400 G9).
   # Puerto 8123 explícito porque no hay ningún proxy interno que escuche en 80/443.
-  internal_url: "http://192.168.50.10:8123"
+  internal_url: "http://192.168.50.11:8123"
 
 http:
   # Las dos opciones siguientes son necesarias SOLO si hay un reverse proxy
