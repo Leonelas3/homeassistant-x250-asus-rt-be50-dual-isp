@@ -133,17 +133,17 @@ class ConfigTab(QWidget):
         extra = QGroupBox("Utilidades")
         e_layout = QVBoxLayout(extra)
         btn_logs = QPushButton("Ver logs nat-start / wan-event")
-        btn_ip1  = QPushButton("Ver IP publica WAN1 (O2)")
+        btn_ip1  = QPushButton("Ver IP publica WAN1 (DiGi)")
         btn_ip2  = QPushButton("Ver IP publica WAN2 (Vodafone)")
         btn_logs.clicked.connect(lambda: self._run_ssh([
             ("Logs", "logread | grep -E 'nat-start|wan-event' | tail -30"),
         ], "Logs de scripts"))
         btn_ip1.clicked.connect(lambda: self._run_ssh([
             ("IP WAN1", "nvram get wan0_ipaddr"),
-        ], "IP WAN1"))
+        ], "IP WAN1 (DiGi)"))
         btn_ip2.clicked.connect(lambda: self._run_ssh([
             ("IP WAN2", "nvram get wan1_ipaddr"),
-        ], "IP WAN2"))
+        ], "IP WAN2 (Vodafone)"))
         for btn in [btn_logs, btn_ip1, btn_ip2]:
             e_layout.addWidget(btn)
 

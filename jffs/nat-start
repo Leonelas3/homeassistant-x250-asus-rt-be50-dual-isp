@@ -9,14 +9,14 @@
 # │  IPs A PERSONALIZAR                                                     │
 # │  Ajusta estas variables antes de copiar el script al router.            │
 # └─────────────────────────────────────────────────────────────────────────┘
-HAOS_IP="192.168.50.10"        # ThinkPad X250 — Home Assistant OS (servidor)
-HP_MINI_IP="192.168.50.20"     # HP Pro Mini 400 G9 — Windows 11
+HAOS_IP="192.168.50.10"        # Home Assistant OS en Hyper-V (HP Pro Mini 400 G9)
+HP_MINI_IP="192.168.50.20"     # HP Pro Mini 400 G9 — Windows 11 (host Hyper-V)
 LAN_SUBNET="192.168.50.0/24"   # Subred completa (para reglas de puertos de subida)
 # =============================================================================
 #
 # Marcas internas de AsusWRT para selección de WAN (máscara 0x0f):
-#   WAN1 → 0x01  (O2/Movistar fibra, puerto 2.5G)
-#   WAN2 → 0x02  (Vodafone cable, LAN3 como WAN2)
+#   WAN1 → 0x01  (DiGi fibra simétrica 1 Gbps, puerto WAN 2.5G)
+#   WAN2 → 0x02  (Vodafone cable 600 Mbps, LAN3 como WAN2)
 #
 # Usamos -I (insert) en lugar de -A (append) para que nuestras reglas queden
 # ANTES de las reglas de ASUS y tengan prioridad sobre ellas.
@@ -28,7 +28,7 @@ WAN1_MARK="0x01/0x0f"
 # Immich sync, y el propio puerto de HA (por si otro cliente sube datos a HA).
 # El puerto 443 (HTTPS) se excluye intencionalmente para que las descargas HTTPS
 # del resto de la LAN sigan beneficiándose del balanceo round-robin entre WANs.
-# El tráfico 443 del ThinkPad (HA server) ya va siempre por WAN1 por la regla HAOS_IP.
+# El tráfico 443 del servidor HA ya va siempre por WAN1 por la regla HAOS_IP.
 UPLOAD_PORTS="21,22,990,2283,8123"
 
 logger -t nat-start "Iniciando aplicación de reglas dual-WAN..."
@@ -55,11 +55,11 @@ ipt_insert_if_missing mangle PREROUTING \
     -j CONNMARK --restore-mark --nfmask 0x0f --ctmask 0x0f
 
 # =============================================================================
-# BLOQUE 2 — ThinkPad X250 (HA server) → siempre WAN1
+# BLOQUE 2 — Servidor HA (Hyper-V) → siempre WAN1
 #
 # Todo el tráfico originado en el servidor HA lleva la marca de WAN1.
 # Esto garantiza que las conexiones entrantes por port forward (443 y 8123)
-# y las salientes (DuckDNS update, notificaciones, etc.) siempre usen O2.
+# y las salientes (DuckDNS update, notificaciones, etc.) siempre usen DiGi.
 # También marcamos el destino para que las respuestas al tráfico entrante
 # (port forward) salgan por el mismo WAN.
 # =============================================================================
@@ -99,4 +99,4 @@ ipt_insert_if_missing mangle PREROUTING \
 ipt_insert_if_missing mangle POSTROUTING \
     -j CONNMARK --save-mark --nfmask 0x0f --ctmask 0x0f
 
-logger -t nat-start "Reglas aplicadas: HAOS ($HAOS_IP) → WAN1 siempre; puertos subida ($UPLOAD_PORTS) → WAN1; 443 en round-robin."
+logger -t nat-start "Reglas aplicadas: HA ($HAOS_IP) → WAN1 siempre; puertos subida ($UPLOAD_PORTS) → WAN1; 443 en round-robin."

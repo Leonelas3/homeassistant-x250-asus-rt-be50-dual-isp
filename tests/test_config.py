@@ -20,6 +20,10 @@ def test_hp_mini_ip_is_valid():
     assert IP_RE.match(config.HP_MINI_IP), f"HP_MINI_IP invalid: {config.HP_MINI_IP}"
 
 
+def test_google_tv_ip_is_valid():
+    assert IP_RE.match(config.GOOGLE_TV_IP), f"GOOGLE_TV_IP invalid: {config.GOOGLE_TV_IP}"
+
+
 # ── Derived URLs contain the right IPs/domains ──────────────────────────────
 
 def test_ha_local_url_embeds_haos_ip():

@@ -17,6 +17,7 @@ class NetworkNode(QGraphicsItem):
         "router":  "#27ae60",
         "server":  "#8e44ad",
         "pc":      "#e67e22",
+        "tv":      "#c0392b",
         "internet":"#7f8c8d",
     }
 
@@ -100,31 +101,38 @@ class NetworkMap(QGraphicsView):
         scene = QGraphicsScene(self)
         self.setScene(scene)
 
-        # Nodos
-        n_internet = NetworkNode("Internet",        kind="internet", x=170, y=10)
-        n_o2       = NetworkNode("O2",  "WAN1 — Fibra 1 Gbps",   kind="isp",    x=30,  y=120)
-        n_voda     = NetworkNode("Vodafone", "WAN2 — Cable 600 Mbps", kind="isp", x=310, y=120)
-        n_router   = NetworkNode("RT-BE50",  "192.168.50.1",      kind="router", x=170, y=240, section=1)
-        n_haos     = NetworkNode("ThinkPad X250", "HA · 192.168.50.10", kind="server", x=30,  y=370, section=7)
-        n_hp       = NetworkNode("HP Mini 400 G9", "Win11 · 192.168.50.20", kind="pc", x=310, y=370, section=2)
+        # ── Nodos ──
+        n_internet   = NetworkNode("Internet",          kind="internet", x=205, y=5)
+        n_digi_isp   = NetworkNode("DiGi",   "Fibra 1 Gbps simét.",  kind="isp",    x=20,  y=110)
+        n_voda_isp   = NetworkNode("Vodafone","Cable 600 Mbps",       kind="isp",    x=390, y=110)
+        n_digi_rtr   = NetworkNode("Router DiGi", "192.168.1.1",      kind="router", x=20,  y=210, section=1)
+        n_voda_rtr   = NetworkNode("Router Vodafone","192.168.1.1",   kind="router", x=390, y=210, section=1)
+        n_router     = NetworkNode("RT-BE50", "192.168.50.1",         kind="router", x=205, y=320, section=2)
+        n_haos       = NetworkNode("HA (Hyper-V)", "192.168.50.10",   kind="server", x=20,  y=440, section=8)
+        n_hp         = NetworkNode("HP Mini 400 G9","Win11 · 192.168.50.20", kind="pc", x=205, y=440, section=3)
+        n_google_tv  = NetworkNode("Google TV", "192.168.50.30",      kind="tv",     x=390, y=440, section=10)
 
-        self._nodes = [n_internet, n_o2, n_voda, n_router, n_haos, n_hp]
+        self._nodes = [n_internet, n_digi_isp, n_voda_isp, n_digi_rtr, n_voda_rtr,
+                       n_router, n_haos, n_hp, n_google_tv]
         for n in self._nodes:
             scene.addItem(n)
 
-        # Edges
+        # ── Edges ──
         edges = [
-            Edge(n_internet, n_o2,     ""),
-            Edge(n_internet, n_voda,   ""),
-            Edge(n_o2,       n_router, "WAN1"),
-            Edge(n_voda,     n_router, "WAN2", wired=False),
-            Edge(n_router,   n_haos,   "LAN · siempre WAN1"),
-            Edge(n_router,   n_hp,     "LAN · round-robin"),
+            Edge(n_internet, n_digi_isp,  ""),
+            Edge(n_internet, n_voda_isp,  ""),
+            Edge(n_digi_isp, n_digi_rtr,  ""),
+            Edge(n_voda_isp, n_voda_rtr,  ""),
+            Edge(n_digi_rtr, n_router,    "WAN1"),
+            Edge(n_voda_rtr, n_router,    "WAN2"),
+            Edge(n_router,   n_haos,      "siempre WAN1"),
+            Edge(n_router,   n_hp,        "round-robin"),
+            Edge(n_router,   n_google_tv, "WiFi", wired=False),
         ]
         for e in edges:
             scene.addItem(e)
 
-        scene.setSceneRect(-20, -10, 600, 470)
+        scene.setSceneRect(-20, -10, 640, 545)
 
     def mousePressEvent(self, event):
         super().mousePressEvent(event)
@@ -136,14 +144,17 @@ class NetworkMap(QGraphicsView):
 # ── Tab principal ─────────────────────────────────────────────────────────────
 
 SECTION_TITLES = {
-    1: "Seccion 1 — Configuracion Dual WAN",
-    2: "Seccion 2 — IPs estaticas (DHCP Reservations)",
-    3: "Seccion 3 — Port Forwarding para Home Assistant",
-    4: "Seccion 4 — Habilitar JFFS y SSH",
-    5: "Seccion 5 — Instalar los scripts de routing",
-    6: "Seccion 6 — Configurar DDNS / DuckDNS",
-    7: "Seccion 7 — Configurar Home Assistant",
-    8: "Seccion 8 — Limitaciones conocidas",
+    1:  "Seccion 1 — Port Forwarding en routers ISP",
+    2:  "Seccion 2 — Configuracion Dual WAN (Asus)",
+    3:  "Seccion 3 — IPs estaticas (DHCP Reservations)",
+    4:  "Seccion 4 — Port Forwarding en el Asus RT-BE50",
+    5:  "Seccion 5 — JFFS y SSH",
+    6:  "Seccion 6 — Scripts de routing",
+    7:  "Seccion 7 — DDNS / DuckDNS",
+    8:  "Seccion 8 — Home Assistant en Hyper-V",
+    9:  "Seccion 9 — Zigbee: Sonoff Dongle Max via red",
+    10: "Seccion 10 — Google TV Streamer",
+    11: "Seccion 11 — Limitaciones conocidas",
 }
 
 
@@ -158,12 +169,12 @@ class GuiaTab(QWidget):
         try:
             text = config.GUIDE_FILE.read_text(encoding="utf-8")
         except Exception:
-            return {i: f"No se pudo leer {config.GUIDE_FILE}" for i in range(1, 9)}
+            return {i: f"No se pudo leer {config.GUIDE_FILE}" for i in range(1, 12)}
 
         current = 0
         buf = []
         for line in text.splitlines():
-            for n in range(1, 9):
+            for n in range(1, 12):
                 if line.startswith(f"## Sección {n}"):
                     if current:
                         sections[current] = "\n".join(buf)

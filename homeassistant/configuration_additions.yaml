@@ -13,6 +13,7 @@ homeassistant:
   external_url: "https://leonelastres.duckdns.org"
 
   # internal_url es la URL que HA usa cuando el cliente está en la red local.
+  # 192.168.50.10 es la IP de la VM de HA en Hyper-V (HP Pro Mini 400 G9).
   # Puerto 8123 explícito porque no hay ningún proxy interno que escuche en 80/443.
   internal_url: "http://192.168.50.10:8123"
 
@@ -26,5 +27,5 @@ http:
     - 127.0.0.1   # localhost (proxy en la misma máquina)
     - ::1          # localhost IPv6
     # Descomenta y ajusta si añades un proxy inverso en la red:
-    # - 192.168.50.1   # IP del router (si el router actúa como proxy/NAT hairpin)
+    # - 192.168.50.1   # IP del router Asus (si actúa como proxy/NAT hairpin)
     # - 192.168.50.xxx # IP del servidor proxy dedicado
