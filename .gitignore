@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+*.json
+*.txt
+backups/
+*.key
+*.pem
+.env
